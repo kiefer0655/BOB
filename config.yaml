@@ -1,6 +1,7 @@
 LLM:
-  model: "gemma3n"
+  model: "qwen3:0.6b"
   port:  11434
   streaming: False
 TTS:
-  model: "C:/Shits/Programing/Python/AI Assitant/asset/TTS/BMO/en_US-bmo_voice.onnx"
+  model:  "C:/Shits/Programing/Python/BOB/asset/TTS/BMO/en_US-bmo_voice.onnx"
+  Enable: True
