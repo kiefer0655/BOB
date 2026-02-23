@@ -14,3 +14,4 @@ def load_config(filename='config.yaml'):
         
 CONFIG = load_config()
 print("CONFIG LOADED")
+print(CONFIG)

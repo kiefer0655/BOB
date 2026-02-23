@@ -15,7 +15,7 @@ class LLM:
 
         self.streaming      = CONFIG["LLM"]["streaming"]
         self.withTTS        = CONFIG["TTS"]["Enable"]
-
+        
 
         self.model = OllamaLLM(model=self.using_model
                           ,base_url=f"http://localhost:{self.port}")
@@ -32,6 +32,15 @@ class LLM:
                 (False, True):  self.GetTTSOutput,
                 (True,  True):  self.GetTTSStreamOutput,
             }[(self.streaming, self.withTTS)]
+
+        self.TTS: tts_handle.TTS
+
+        if self.withTTS:
+            self.TTS_model_path = CONFIG["TTS"]["model"]
+
+            self.TTS = tts_handle.TTS()
+            self.TTS.LoadTTSModle(model_path=self.TTS_model_path)
+
 
     def PromptLLM(self,text):
         """
@@ -64,13 +73,15 @@ class LLM:
         Prompt the LLM with text and Get TTS respond
         """
         output = self.PromptLLM(text)
-        print(output)
-        tts_handle.speak(output)
+        print(f"Speaking:{output}")
+        self.TTS.speak(output)
 
     def GetTTSStreamOutput(self,text):
         """
         Prompt the LLM with text and Get Streaming TTS respond
         """
+        print("Speaking: ",end="")
+        
         tts_buffer = ""
 
         for chunk in self.PromptLLMStreaming(text):
@@ -78,10 +89,10 @@ class LLM:
             print(chunk, end="", flush=True)
             tts_buffer += chunk
             if re.search(r"[.!?]\s$", tts_buffer):
-                tts_handle.speak(tts_buffer.strip())
+                self.TTS.speak(tts_buffer.strip())
                 tts_buffer = ""
 
-        tts_handle.speak(tts_buffer.strip())
+        self.TTS.speak(tts_buffer.strip())
         print()
     
     def GetPureTextOutput(self,text):
