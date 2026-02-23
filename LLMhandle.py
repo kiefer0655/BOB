@@ -10,22 +10,15 @@ from confighandle import CONFIG
 class LLM:
     def __init__(self) -> None:
         
+        self.fake           = CONFIG["LLM"]["FakeLLM"]
+
         self.using_model    = CONFIG["LLM"]["model"]
         self.port           = CONFIG["LLM"]["port"]
 
         self.streaming      = CONFIG["LLM"]["streaming"]
         self.withTTS        = CONFIG["TTS"]["Enable"]
-        
 
-        self.model = OllamaLLM(model=self.using_model
-                          ,base_url=f"http://localhost:{self.port}")
-
-        template = """{question}"""
-
-        prompt = ChatPromptTemplate.from_template(template)
-
-        self.chain = prompt | self.model
-
+        #Set different Resopnd method
         self.respond = {
                 (False, False): self.GetPureTextOutput,
                 (True,  False): self.GetPureTextStreamOutput,
@@ -33,6 +26,8 @@ class LLM:
                 (True,  True):  self.GetTTSStreamOutput,
             }[(self.streaming, self.withTTS)]
 
+
+        #Include TTS
         self.TTS: tts_handle.TTS
 
         if self.withTTS:
@@ -41,12 +36,27 @@ class LLM:
             self.TTS = tts_handle.TTS()
             self.TTS.LoadTTSModle(model_path=self.TTS_model_path)
 
+        if self.fake:
+            print("FakeLLM mode")
+            self.fake_respond = lambda text: f"You Said: {text}"
+
+        if not self.fake:
+            self.model = OllamaLLM(model=self.using_model
+                              ,base_url=f"http://localhost:{self.port}")
+
+            template = """{question}"""
+            prompt = ChatPromptTemplate.from_template(template)
+            self.chain = prompt | self.model
+
 
     def PromptLLM(self,text):
         """
         Prompt the LLM with text
         return Single Block Str Output
         """
+        if self.fake:
+            return self.fake_respond(text) 
+        
         try:
             respone = self.chain.invoke({"question":text})
             return respone
@@ -58,6 +68,9 @@ class LLM:
         Prompt the LLM with text
         return RealTime Streaming iterable Str Output
         """
+        if self.fake:
+            return iter([self.fake_respond(text)])
+
         try:
             return self.chain.stream({"question": text})
         except:
